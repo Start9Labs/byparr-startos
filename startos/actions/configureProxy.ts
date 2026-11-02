@@ -15,10 +15,8 @@ export const inputSpec = InputSpec.of({
     placeholder: 'http://proxy.example.com:8080',
     patterns: [
       {
-        regex: '^(https?|socks5)://[^\\s/:]+:[0-9]+$',
-        description: i18n(
-          'Must be http://, https:// or socks5:// followed by host:port',
-        ),
+        regex: '^(http|socks5)://[^\\s/:]+:[0-9]+$',
+        description: i18n('Must be http:// or socks5:// followed by host:port'),
       },
     ],
   }),

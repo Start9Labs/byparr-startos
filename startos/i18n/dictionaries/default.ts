@@ -13,7 +13,7 @@ const dict = {
   // actions/configureProxy.ts
   'Proxy Server': 5,
   "The proxy Byparr's browser connects through, as protocol://host:port. Leave empty to connect directly.": 6,
-  'Must be http://, https:// or socks5:// followed by host:port': 7,
+  'Must be http:// or socks5:// followed by host:port': 7,
   Username: 8,
   Password: 9,
   'Leave empty if the proxy needs no authentication.': 10,

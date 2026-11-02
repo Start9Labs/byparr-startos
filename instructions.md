@@ -50,4 +50,4 @@ Pick one:
 
 ### Actions
 
-- **Configure Residential Proxy** — sets the proxy server, as `http://`, `https://` or `socks5://` followed by host and port, plus an optional username and password. Clear the server field to connect directly again. Byparr restarts when you save. While a proxy is set and unreachable, every request Byparr receives fails.
+- **Configure Residential Proxy** — sets the proxy server, as `http://` or `socks5://` followed by host and port, plus an optional username and password. Clear the server field to connect directly again. Byparr restarts when you save. While a proxy is set and unreachable, every request Byparr receives fails.

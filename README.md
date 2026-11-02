@@ -84,9 +84,11 @@ The API has no authentication, and every request makes the server open a browser
 
 ## Installation and First-Run Flow
 
-Nothing to set up: the service starts with no proxy and is ready once it listens. The first `/v1` request after each start takes up to about 30 seconds, because Byparr first discovers its public IP (through `api.ipify.org`, `icanhazip.com` or `checkip.amazonaws.com`, via the proxy when one is set) and maps it to a browser timezone and locale with a GeoIP database from GitHub (`daijro/geoip-all-in-one`). Each lookup sends one HEAD request to GitHub to learn the latest release, and downloads the database only when that differs from the copy in `geoip/` — on the first request after install, and when upstream publishes a new one. Later requests take a few seconds.
+Nothing to set up: the service starts with no proxy and is ready once it listens. Every `/v1` request launches a fresh browser, and each launch first discovers Byparr's public IP (through `api.ipify.org`, `icanhazip.com` or `checkip.amazonaws.com`, via the proxy when one is set) and maps it to a browser timezone and locale with a GeoIP database from GitHub (`daijro/geoip-all-in-one`). Without a proxy it discovers the IP twice, once for each. Each launch also asks GitHub for the latest database release, and downloads it only when that differs from the copy in `geoip/`: on the first request after install, and when upstream publishes a new one. Those requests take longer; the rest take a few seconds.
 
 ## Actions
+
+One user-facing action, which may run while Byparr is running or stopped.
 
 - **Configure Residential Proxy** (`configure-proxy`) — run when the user has bought an HTTP or SOCKS5 proxy, usually a residential one, to change the address websites see. It writes the three `proxy*` keys in `store.json`; clearing the server clears the username and password too. Saving restarts Byparr (a few seconds). Idempotent. With a proxy set that cannot be reached, every `/v1` request fails with HTTP 500 and a `GeoTimezoneError` ("could not discover the proxy egress IP") in the service log; clearing the server or fixing the address resolves it.
 
@@ -106,8 +108,10 @@ The `main` volume is copied (`ofVolumes`) with `geoip/` excluded, so the backup 
 
 ## Limitations and Differences
 
+Upstream options the package leaves unset, where it runs Byparr differently from upstream, and what it cannot guarantee.
+
 1. No setting for upstream's `OWUI_API_KEY`, so the `/load` endpoint for Open WebUI is unauthenticated.
-2. `BROWSER_LOCALE` and `BROWSER_TIMEZONE` are not set, so Byparr always derives them from its public IP: one call to a public-IP service after every start (and on every request while a proxy is set), plus a HEAD request to GitHub for the GeoIP release.
+2. No `BROWSER_LOCALE` setting, so the browser's language follows the country of Byparr's public IP, as its timezone always does. Without a proxy, that costs a second public-IP lookup on every request.
 3. No `LOG_LEVEL` setting; logs are at upstream's default, `INFO`.
 4. No tmpfs for `/tmp`; upstream's suggestion to put `/cache` on a tmpfs would hide the browser baked into the image.
 5. Getting past a challenge is likely, not guaranteed: Cloudflare also weighs the reputation of the address the browser appears from.

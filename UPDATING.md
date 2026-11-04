@@ -15,7 +15,7 @@ Ignore the `main` and `pr-*` image tags — those are untested builds.
 ## Applying the bump
 
 1. Confirm the tag carries both architectures: `docker manifest inspect ghcr.io/thephaseless/byparr:<version> | jq -r '.manifests[].platform.architecture'`.
-2. Set `dockerTag` to `ghcr.io/thephaseless/byparr:<version>` and `version` in `startos/versions/current.ts` to `<version>:0`.
+2. Set `dockerTag` to `ghcr.io/thephaseless/byparr:<version>`.
 3. Check upstream's README for renamed or removed environment variables: the package sets `PORT` and the `PROXY_*` variables in `startos/main.ts`.
 4. Confirm the GeoIP database still lives at `geoipDir` (`startos/utils.ts`), where `startos/main.ts` mounts the volume's `geoip` subpath. If it moves, nothing fails, but the database downloads again after every restart. This must print `/cache/invisible-playwright/geoip`:
 

@@ -84,13 +84,15 @@ The API has no authentication, and every request makes the server open a browser
 
 ## Installation and First-Run Flow
 
-Nothing to set up: the service starts with no proxy and is ready once it listens. Every `/v1` request launches a fresh browser, and each launch first discovers Byparr's public IP (through `api.ipify.org`, `icanhazip.com` or `checkip.amazonaws.com`, via the proxy when one is set) and maps it to a browser timezone and locale with a GeoIP database from GitHub (`daijro/geoip-all-in-one`). Without a proxy it discovers the IP twice, once for each. Each launch also asks GitHub for the latest database release, and downloads it only when that differs from the copy in `geoip/`: on the first request after install, and when upstream publishes a new one. Those requests take longer; the rest take a few seconds.
+Nothing to set up: the service starts with no proxy. The `geoip/` mount preserves the location database across restarts; upstream checks it against GitHub (`daijro/geoip-all-in-one`) during startup and downloads it when missing or outdated, before opening the API port. Without a proxy, startup also discovers the public IP through `api.ipify.org`, `icanhazip.com` or `checkip.amazonaws.com` and resolves the browser timezone and locale once per process. Successful lookups remain cached until restart; proxied requests still discover the proxy's public IP on each request. Every `/v1` request launches a fresh browser.
+
+Startup can take several minutes on a slow or unreachable network. Failed lookups are retried on later requests: the public IP after ten minutes, and the database initially after thirty seconds with exponential backoff up to ten minutes. Direct connections fall back to the host timezone and `en-US`; proxied requests need the database to resolve their timezone and fail while it is unavailable.
 
 ## Actions
 
 One user-facing action, which may run while Byparr is running or stopped.
 
-- **Configure Residential Proxy** (`configure-proxy`) — run when the user has bought an HTTP or SOCKS5 proxy, usually a residential one, to change the address websites see. It writes the three `proxy*` keys in `store.json`; clearing the server clears the username and password too. Saving restarts Byparr (a few seconds). Idempotent. With a proxy set that cannot be reached, every `/v1` request fails with HTTP 500 and a `GeoTimezoneError` ("could not discover the proxy egress IP") in the service log; clearing the server or fixing the address resolves it.
+- **Configure Residential Proxy** (`configure-proxy`) — run when the user has bought an HTTP or SOCKS5 proxy, usually a residential one, to change the address websites see. It writes the three `proxy*` keys in `store.json`; clearing the server clears the username and password too. Saving restarts Byparr, including its startup location checks. Idempotent. With a proxy set that cannot be reached, every `/v1` request fails with HTTP 500 and a `GeoTimezoneError` ("could not discover the proxy egress IP") in the service log; clearing the server or fixing the address resolves it.
 
 A proxy changes only the address Byparr's browser appears from. Prowlarr retries the challenged request itself with Byparr's cookies, and Cloudflare accepts them only from the solving address, so Prowlarr must use the same proxy (its **Settings → General → Proxy**), or, without a proxy, the same outbound gateway as Byparr. `instructions.md` gives the user the three supported setups. Indexers that fail while Byparr reports `Success` in its log are almost always this mismatch.
 
@@ -100,18 +102,18 @@ None. The service is never held on a prompt.
 
 ## Health Checks
 
-One check, `primary` ("API"), that passes once port 8191 is listening. It does not use upstream's `/health`, which launches a browser and loads google.com on every call. A green check therefore says the server is up, not that challenges are being solved; for that, read the log for `Done <url>` lines and their timings, or a failure. A red check after start means the Python server crashed — the log shows why.
+One check, `primary` ("API"), that passes once port 8191 is listening. It does not use upstream's `/health`, which launches a browser and loads google.com on every call. A green check therefore says the server is up, not that challenges are being solved; for that, read the log for `Done <url>` lines and their timings, or a failure. The port stays closed while startup checks the location database and public IP, so failed readiness checks display as starting for the first five minutes. After that, a red check can mean startup is still waiting on those lookups or the server has failed; check the log to distinguish them.
 
 ## Backups and Restore
 
-The `main` volume is copied (`ofVolumes`) with `geoip/` excluded, so the backup is just `store.json` and a restore brings back the proxy settings. The GeoIP database is downloaded again on the first request after a restore.
+The `main` volume is copied (`ofVolumes`) with `geoip/` excluded, so the backup is just `store.json` and a restore brings back the proxy settings. The GeoIP database is downloaded again during startup after a restore.
 
 ## Limitations and Differences
 
 Upstream options the package leaves unset, where it runs Byparr differently from upstream, and what it cannot guarantee.
 
 1. No setting for upstream's `OWUI_API_KEY`, so the `/load` endpoint for Open WebUI is unauthenticated.
-2. No `BROWSER_LOCALE` setting, so the browser's language follows the country of Byparr's public IP, as its timezone always does. Without a proxy, that costs a second public-IP lookup on every request.
+2. No `BROWSER_LOCALE` or `BROWSER_TIMEZONE` settings, so the browser's language and timezone follow the country of Byparr's public IP. Direct-connection results remain cached until restart; lookup failures fall back to the host timezone and `en-US`.
 3. No `LOG_LEVEL` setting; logs are at upstream's default, `INFO`.
 4. No tmpfs for `/tmp`; upstream's suggestion to put `/cache` on a tmpfs would hide the browser baked into the image.
 5. Getting past a challenge is likely, not guaranteed: Cloudflare also weighs the reputation of the address the browser appears from.

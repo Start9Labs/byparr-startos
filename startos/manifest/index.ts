@@ -13,7 +13,7 @@ export const manifest = setupManifest({
   volumes: ['main'],
   images: {
     byparr: {
-      source: { dockerTag: 'ghcr.io/thephaseless/byparr:3.0.4' },
+      source: { dockerTag: 'ghcr.io/thephaseless/byparr:3.1.1' },
       arch: ['x86_64', 'aarch64'],
     },
   },

@@ -47,6 +47,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
             successMessage: i18n('The API is ready'),
             errorMessage: i18n('The API is not ready'),
           }),
+        gracePeriod: 300_000,
       },
       requires: ['chown-geoip'],
     })

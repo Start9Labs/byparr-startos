@@ -102,7 +102,7 @@ None. The service is never held on a prompt.
 
 ## Health Checks
 
-One check, `primary` ("API"), that passes once port 8191 is listening. It does not use upstream's `/health`, which launches a browser and loads google.com on every call. A green check therefore says the server is up, not that challenges are being solved; for that, read the log for `Done <url>` lines and their timings, or a failure. A red check during startup can mean the location database or public-IP lookup is still pending; the log distinguishes this from a Python server crash.
+One check, `primary` ("API"), that passes once port 8191 is listening. It does not use upstream's `/health`, which launches a browser and loads google.com on every call. A green check therefore says the server is up, not that challenges are being solved; for that, read the log for `Done <url>` lines and their timings, or a failure. The port stays closed while startup checks the location database and public IP, so failed readiness checks display as starting for the first five minutes. After that, a red check can mean startup is still waiting on those lookups or the server has failed; check the log to distinguish them.
 
 ## Backups and Restore
 

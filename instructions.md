@@ -18,7 +18,9 @@ Byparr has no web interface of its own. Opening the API address in a browser sho
 3. In Prowlarr, edit each indexer that fails with a Cloudflare error and add the **byparr** tag. Only tagged indexers go through Byparr.
 4. Make sure Byparr and Prowlarr reach the internet from the same address — see below.
 
-Every request Byparr handles first asks a public-address service (ipify, icanhazip or Amazon) for the address it browses from (your server's, or the proxy's if you set one), so it can match its browser's language and timezone to that location. It also checks GitHub for a newer location database. The very first request after install downloads that database, about 115 MB, and takes up to half a minute; after that, requests take a few seconds.
+Before the API becomes ready, Byparr checks GitHub for its location database and downloads it if missing or outdated (about 115 MB). Let startup finish before connecting Prowlarr; slow or blocked downloads can take several minutes. The database is kept across restarts.
+
+Without a proxy, Byparr looks up your public address at startup to match its browser's language and timezone, and keeps the result until you restart it. Restart Byparr if your public address or outbound gateway changes. With a proxy, it looks up the proxy's address for every request. If a location lookup fails, direct connections fall back to the server's timezone and English; proxied requests can fail until the database becomes available.
 
 ## Byparr and Prowlarr must share a public address
 
